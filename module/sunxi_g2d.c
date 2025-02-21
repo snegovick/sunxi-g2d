@@ -60,6 +60,7 @@ static struct g2d_fmt g2d_supported_fmts[] = {
 
 struct g2d_fmt *find_fmt(struct v4l2_pix_format *v4l2_pix_fmt)
 {
+  printk("g2d find fmt\n");
 	unsigned int i;
 	for (i = 0; i < NUM_SUPPORTED_FMTS; i++) {
 		if (g2d_supported_fmts[i].fourcc == v4l2_pix_fmt->pixelformat)
@@ -71,6 +72,7 @@ struct g2d_fmt *find_fmt(struct v4l2_pix_format *v4l2_pix_fmt)
 
 static inline struct sunxi_g2d_ctx *g2d_file2ctx(struct file *file)
 {
+  printk("g2d file2ctx\n");
 	return container_of(file->private_data, struct sunxi_g2d_ctx, fh);
 }
 
@@ -83,10 +85,13 @@ static struct g2d_frame *get_frame(struct sunxi_g2d_ctx *ctx,
 {
 	switch (type) {
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
+    printk("g2d get frame video output\n");
 		return &ctx->src;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
+    printk("g2d get frame video capture\n");
 		return &ctx->dst;
 	default:
+    printk("g2d get frame einval: %i\n", type);
 		return ERR_PTR(-EINVAL);
 	}
 }
@@ -95,6 +100,7 @@ static struct g2d_frame *get_frame(struct sunxi_g2d_ctx *ctx,
 
 static int g2d_s_ctrl(struct v4l2_ctrl *ctrl)
 {
+  printk("g2d s ctrl\n");
 	struct sunxi_g2d_ctx *ctx = container_of(ctrl->handler,
 					      struct sunxi_g2d_ctx,
 					      ctrl_handler);
@@ -131,6 +137,7 @@ static int g2d_s_ctrl(struct v4l2_ctrl *ctrl)
 
 static int g2d_try_ctrl(struct v4l2_ctrl *ctrl)
 {
+  printk("g2d try ctrl\n");
 	if (ctrl->id == V4L2_CID_SUNXI_G2D_IN_ALIGNMENT || 
 		ctrl->id == V4L2_CID_SUNXI_G2D_OUT_ALIGNMENT) {
 		if ((ctrl->val) & (ctrl->val - 1)) /* must be power of 2 */
@@ -237,10 +244,12 @@ static const struct v4l2_ctrl_config g2d_ctrls[] = {
 
 static int g2d_job_ready(void *priv)
 {
+  printk("g2d job ready\n");
 	struct sunxi_g2d_ctx *ctx = priv;
 
 	switch (ctx->chosen_g2d_op) {
 	case G2D_RECTFILL:
+    printk("g2d job ready OP RECTFILL\n");
 		/*
 		 * In reality Rectfill requires no source buffer and only a single
 		 * destination buffer and its selection to use as the fill rectangle
@@ -251,14 +260,16 @@ static int g2d_job_ready(void *priv)
 			return 0;
 		break;
 	default:
+    printk("g2d job ready OP unknown %i\n", ctx->chosen_g2d_op);
 		break;
 	}
 
 	return 1;
-} 
+}
 
 static void g2d_device_run(void *priv)
 {
+  printk("g2d device run\n");
 	struct sunxi_g2d_ctx *ctx = priv;
 	struct sunxi_g2d *g2d = ctx->g2d;
 	struct vb2_v4l2_buffer *src, *dst;
@@ -294,6 +305,7 @@ static void g2d_device_run(void *priv)
 
 irqreturn_t g2d_irq(int irq, void *data)
 {
+  printk("g2d irq\n");
 	struct sunxi_g2d *g2d = data;
 	struct sunxi_g2d_ctx *ctx;
 	struct vb2_v4l2_buffer *src, *dst;
@@ -325,6 +337,7 @@ irqreturn_t g2d_irq(int irq, void *data)
 static int g2d_querycap(struct file *file, void *priv,
 				struct v4l2_capability *cap)
 {
+  printk("g2d qcap\n");
 	strscpy(cap->driver, G2D_NAME, sizeof(cap->driver));
 	strscpy(cap->card, G2D_NAME, sizeof(cap->card));
 	snprintf(cap->bus_info, sizeof(cap->bus_info),
@@ -336,6 +349,7 @@ static int g2d_querycap(struct file *file, void *priv,
 static int g2d_enum_fmt(struct file *file, void *priv,
 				struct v4l2_fmtdesc *f)
 {
+  printk("g2d enum fmt\n");
 	if (f->index < NUM_SUPPORTED_FMTS) {
 		f->pixelformat = g2d_supported_fmts[f->index].fourcc;
 
@@ -348,12 +362,15 @@ static int g2d_enum_fmt(struct file *file, void *priv,
 static int g2d_g_fmt(struct file *file, void *priv,
 				     struct v4l2_format *f)
 {
+  printk("g2d g fmt\n");
 	struct sunxi_g2d_ctx *ctx = g2d_file2ctx(file);
 	struct g2d_frame *frm;
 
 	frm = get_frame(ctx, f->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d g fmt err\n");
 		return PTR_ERR(frm);
+  }
 
 	f->fmt.pix = frm->v4l2_pix_fmt;
 
@@ -363,13 +380,15 @@ static int g2d_g_fmt(struct file *file, void *priv,
 static int g2d_try_fmt(struct file *file, void *priv,
 				       struct v4l2_format *f)
 {
+  printk("g2d try fmt\n");
 	struct g2d_fmt *fmt;
 	uint32_t width = f->fmt.pix.width;
 	uint32_t height = f->fmt.pix.height;
 
 	fmt = find_fmt(&f->fmt.pix);
-	if (!fmt)
+	if (!fmt) {
 		f->fmt.pix.pixelformat = g2d_supported_fmts[0].fourcc;
+  }
 
 	width = clamp(width, G2D_MIN_WIDTH, G2D_MAX_WIDTH);
 	height = clamp(height, G2D_MIN_HEIGHT, G2D_MAX_HEIGHT);
@@ -384,22 +403,29 @@ static int g2d_try_fmt(struct file *file, void *priv,
 
 static int g2d_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
+  printk("g2d s fmt\n");
 	struct sunxi_g2d_ctx *ctx = g2d_file2ctx(file);
 	struct vb2_queue *vq;
 	struct g2d_frame *frm;
 	int ret;
 
 	ret = g2d_try_fmt(file, priv, f);
-	if (ret)
+	if (ret) {
+    printk("g2d s fmt err %i\n", ret);
 		return ret;
+  }
 
 	frm = get_frame(ctx, f->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d s fmt is err\n");
 		return PTR_ERR(frm);
+  }
 
 	vq = v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type);
-	if (vb2_is_busy(vq))
+	if (vb2_is_busy(vq)) {
+    printk("g2d s fmt is busy\n");
 		return -EBUSY;
+  }
 
 	frm->v4l2_pix_fmt = f->fmt.pix;
 	frm->premult_alpha = (f->fmt.pix.flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA);
@@ -410,12 +436,15 @@ static int g2d_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 static int g2d_g_selection(struct file *file, void *priv,
 			      struct v4l2_selection *sel)
 {
+  printk("g2d g selection\n");
 	struct sunxi_g2d_ctx *ctx = g2d_file2ctx(file);
 	struct g2d_frame *frm;
 
 	frm = get_frame(ctx, sel->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d s selection is err\n");
 		return PTR_ERR(frm);
+  }
 
 	switch (sel->target) {
 	case V4L2_SEL_TGT_CROP:
@@ -427,10 +456,13 @@ static int g2d_g_selection(struct file *file, void *priv,
 	case V4L2_SEL_TGT_COMPOSE:
 	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
 	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
-		if (!V4L2_TYPE_IS_CAPTURE(sel->type))
+		if (!V4L2_TYPE_IS_CAPTURE(sel->type)) {
+      printk("g2d s selection type is capture\n");
 			return -EINVAL;
+    }
 		break;
 	default:
+    printk("g2d s selection einval\n");
 		return -EINVAL;
 	}
 
@@ -452,6 +484,7 @@ static int g2d_g_selection(struct file *file, void *priv,
 		sel->r.height = frm->v4l2_pix_fmt.height;
 		break;
 	default:
+    printk("g2d s selection 2 einval\n");
 		return -EINVAL;
 	}
 
@@ -461,6 +494,7 @@ static int g2d_g_selection(struct file *file, void *priv,
 static int g2d_try_selection(struct file *file, void *priv,
 				const struct v4l2_selection *sel)
 {
+  printk("g2d try selection\n");
 	struct sunxi_g2d_ctx *ctx = g2d_file2ctx(file);
 	struct g2d_frame *frm;
 
@@ -469,11 +503,15 @@ static int g2d_try_selection(struct file *file, void *priv,
 		return PTR_ERR(frm);
 
 	if (V4L2_TYPE_IS_CAPTURE(sel->type)) {
-		if (sel->target != V4L2_SEL_TGT_COMPOSE)
+		if (sel->target != V4L2_SEL_TGT_COMPOSE) {
+      printk("g2d try selection not tgt compose\n");
 			return -EINVAL;
+    }
 	} else if (V4L2_TYPE_IS_OUTPUT(sel->type)) {
-		if (sel->target != V4L2_SEL_TGT_CROP)
+		if (sel->target != V4L2_SEL_TGT_CROP) {
+      printk("g2d try selection not tgt crop\n");
 			return -EINVAL;
+    }
 	}
 
 	if (sel->r.top < 0 || sel->r.left < 0) {
@@ -483,14 +521,20 @@ static int g2d_try_selection(struct file *file, void *priv,
 	}
 
 	if ((sel->r.left > frm->v4l2_pix_fmt.width - 1) ||
-		(sel->r.top > frm->v4l2_pix_fmt.height - 1))
+      (sel->r.top > frm->v4l2_pix_fmt.height - 1)) {
+    printk("g2d try selection einval 1\n");
 		return -EINVAL;
+  }
 	
-	if ((sel->r.left + sel->r.width) > (frm->v4l2_pix_fmt.width - 1))
+	if ((sel->r.left + sel->r.width) > (frm->v4l2_pix_fmt.width - 1)) {
+    printk("g2d try selection einval 2\n");
 		return -EINVAL;
+  }
 
-	if ((sel->r.top + sel->r.height) > (frm->v4l2_pix_fmt.height - 1))
+	if ((sel->r.top + sel->r.height) > (frm->v4l2_pix_fmt.height - 1)) {
+    printk("g2d try selection einval 3\n");
 		return -EINVAL;
+  }
 
 	return 0;
 }
@@ -498,17 +542,22 @@ static int g2d_try_selection(struct file *file, void *priv,
 static int g2d_s_selection(struct file *file, void *priv,
 			      struct v4l2_selection *sel)
 {
+  printk("g2d s selection\n");
 	struct sunxi_g2d_ctx *ctx = g2d_file2ctx(file);
 	struct g2d_frame *frm;
 	int ret;
 
 	ret = g2d_try_selection(file, priv, sel);
-	if (ret)
+	if (ret) {
+    printk("g2d s selection try selection err: %i\n", ret);
 		return ret;
+  }
 
 	frm = get_frame(ctx, sel->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d s selection is_err\n");
 		return PTR_ERR(frm);
+  }
 
 	frm->sel.r.width = sel->r.width;
 	frm->sel.r.height	= sel->r.height;
@@ -552,16 +601,21 @@ static int g2d_queue_setup(struct vb2_queue *vq, unsigned int *nbuffers,
 				   unsigned int *nplanes, unsigned int sizes[],
 				   struct device *alloc_devs[])
 {
+  printk("g2d queue setup\n");
 	struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vq);
 	struct g2d_frame *frm;
 
 	frm = get_frame(ctx, vq->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d queue_setup is_err\n");
 		return PTR_ERR(frm);
+  }
 
 	if (*nplanes) {
-		if (sizes[0] < frm->v4l2_pix_fmt.sizeimage)
+		if (sizes[0] < frm->v4l2_pix_fmt.sizeimage) {
+      printk("g2d queue_setup bad size\n");
 			return -EINVAL;
+    }
 	} else {
 		sizes[0] = frm->v4l2_pix_fmt.sizeimage;
 		*nplanes = 1;
@@ -572,15 +626,20 @@ static int g2d_queue_setup(struct vb2_queue *vq, unsigned int *nbuffers,
 
 static int g2d_buf_prepare(struct vb2_buffer *vb)
 {
+  printk("g2d buf prepare\n");
 	struct vb2_queue *vq = vb->vb2_queue;
 	struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vq);
 	struct g2d_frame *frm;
 
 	frm = get_frame(ctx, vq->type);
-	if (IS_ERR(frm))
+	if (IS_ERR(frm)) {
+    printk("g2d queue_setup is_err\n");
 		return PTR_ERR(frm);
-	if (vb2_plane_size(vb, 0) < frm->v4l2_pix_fmt.sizeimage)
+  }
+	if (vb2_plane_size(vb, 0) < frm->v4l2_pix_fmt.sizeimage) {
+    printk("g2d queue_setup einval\n");
 		return -EINVAL;
+  }
 
 	vb2_set_plane_payload(vb, 0, frm->v4l2_pix_fmt.sizeimage);
 
@@ -589,6 +648,7 @@ static int g2d_buf_prepare(struct vb2_buffer *vb)
 
 static void g2d_buf_queue(struct vb2_buffer *vb)
 {
+  printk("g2d buf queue\n");
 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
 	struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
 
@@ -597,6 +657,7 @@ static void g2d_buf_queue(struct vb2_buffer *vb)
 
 static void g2d_queue_cleanup(struct vb2_queue *vq, uint32_t state)
 {
+  printk("g2d queue cleanup\n");
 	struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vq);
 	struct vb2_v4l2_buffer *vbuf;
 
@@ -613,6 +674,7 @@ static void g2d_queue_cleanup(struct vb2_queue *vq, uint32_t state)
 
 static int g2d_start_streaming(struct vb2_queue *vq, unsigned int count)
 {
+  printk("g2d start streaming\n");
 	struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vq);
 	struct device *dev = ctx->g2d->dev;
 	int ret;
@@ -624,6 +686,7 @@ static int g2d_start_streaming(struct vb2_queue *vq, unsigned int count)
 			g2d_queue_cleanup(vq, VB2_BUF_STATE_QUEUED);
 		}
 
+    printk("g2d start streaming ret: %i\n", ret);
 		return ret;
 	}
 
@@ -632,6 +695,7 @@ static int g2d_start_streaming(struct vb2_queue *vq, unsigned int count)
 
 static void g2d_stop_streaming(struct vb2_queue *vq)
 {
+  printk("g2d stop streaming\n");
 	if (V4L2_TYPE_IS_OUTPUT(vq->type)) {
 		struct sunxi_g2d_ctx *ctx = vb2_get_drv_priv(vq);
 
@@ -654,6 +718,7 @@ static const struct vb2_ops g2d_qops = {
 static int g2d_queue_init(void *priv, struct vb2_queue *src_vq,
 				  struct vb2_queue *dst_vq)
 {
+  printk("g2d queue init\n");
 	struct sunxi_g2d_ctx *ctx = priv;
 	int ret;
 
@@ -669,8 +734,10 @@ static int g2d_queue_init(void *priv, struct vb2_queue *src_vq,
 	src_vq->dev = ctx->g2d->dev;
 
 	ret = vb2_queue_init(src_vq);
-	if (ret)
+	if (ret) {
+    printk("g2d queue init ret1: %i\n", ret);
 		return ret;
+  }
 
 	dst_vq->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	dst_vq->io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
@@ -684,14 +751,17 @@ static int g2d_queue_init(void *priv, struct vb2_queue *src_vq,
 	dst_vq->dev = ctx->g2d->dev;
 
 	ret = vb2_queue_init(dst_vq);
-	if (ret)
+	if (ret) {
+    printk("g2d queue init ret2: %i\n", ret);
 		return ret;
+  }
 
 	return 0;
 }
 
 static int g2d_setup_ctrls(struct sunxi_g2d_ctx *ctx)
 {
+  printk("g2d setup ctrls\n");
 	struct sunxi_g2d *g2d = ctx->g2d;
 	struct v4l2_ctrl *ctrl;
 	int i;
@@ -716,16 +786,20 @@ static int g2d_setup_ctrls(struct sunxi_g2d_ctx *ctx)
 
 static int g2d_open(struct file *file)
 {
+  printk("g2d open\n");
 	struct sunxi_g2d *g2d = video_drvdata(file);
 	struct sunxi_g2d_ctx *ctx = NULL;
 	int ret;
 
-	if (mutex_lock_interruptible(&g2d->dev_mutex))
+	if (mutex_lock_interruptible(&g2d->dev_mutex)) {
+    printk("g2d open -ERESTARTSYS\n");
 		return -ERESTARTSYS;
+  }
 
 	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
 	if (!ctx) {
 		mutex_unlock(&g2d->dev_mutex);
+    printk("g2d open -ENOMEM\n");
 		return -ENOMEM;
 	}
 
@@ -783,6 +857,7 @@ err_free:
 
 static int g2d_release(struct file *file)
 {
+  printk("g2d release\n");
 	struct sunxi_g2d *g2d = video_drvdata(file);
 	struct sunxi_g2d_ctx *ctx = container_of(file->private_data,
 						   struct sunxi_g2d_ctx, fh);
@@ -827,6 +902,7 @@ static const struct v4l2_m2m_ops g2d_m2m_ops = {
 
 static int g2d_probe(struct platform_device *pdev)
 {
+  printk("g2d probe\n");
 	struct sunxi_g2d *g2d;
 	struct video_device *vfd;
 	int irq, ret;
@@ -931,6 +1007,7 @@ err_v4l2:
 
 static void g2d_remove(struct platform_device *pdev)
 {
+  printk("g2d remove\n");
 	struct sunxi_g2d *g2d = platform_get_drvdata(pdev);
 
 	v4l2_m2m_release(g2d->m2m_dev);
@@ -944,9 +1021,11 @@ static void g2d_remove(struct platform_device *pdev)
 
 static int sunxi_g2d_runtime_resume(struct device *device)
 {
+  printk("g2d runtime resume\n");
 	struct sunxi_g2d *g2d = dev_get_drvdata(device);
 	int ret;
 
+  printk("g2d runtime resume reset_control_deassert\n");
 	ret = reset_control_deassert(g2d->rstc);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to deassert reset\n");
@@ -960,18 +1039,21 @@ static int sunxi_g2d_runtime_resume(struct device *device)
 	 * TODO: try other closer rates to pin down [min, max] of the 
      * functional range. 
 	 */
+  printk("g2d runtime resume clk_set_rate_exclusive\n");
 	ret = clk_set_rate_exclusive(g2d->mod_clk, 300000000);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to set exclusive mod clock rate\n");
 		goto err_reset_assert;
 	}
 
+  printk("g2d runtime resume clk_prepare_enable bus\n");
 	ret = clk_prepare_enable(g2d->bus_clk);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to enable bus clock\n");
 		goto err_exclusive_rate;
 	}
 
+  printk("g2d runtime resume clk_prepare_enable mod\n");
 	ret = clk_prepare_enable(g2d->mod_clk);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to enable mod clock\n");
@@ -979,12 +1061,14 @@ static int sunxi_g2d_runtime_resume(struct device *device)
 		goto err_put_bus_clk;
 	}
 
+  printk("g2d runtime resume clk_prepare_enable ram\n");
 	ret = clk_prepare_enable(g2d->ram_clk);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to enable ram clock\n");
 		goto err_put_mod_clk;
 	}
 
+  printk("g2d runtime resume g2d_hw_open\n");
 	g2d_hw_open(g2d);
 
 	return 0;
@@ -1003,6 +1087,7 @@ err_reset_assert:
 
 static int sunxi_g2d_runtime_suspend(struct device *device)
 {
+  printk("g2d runtime suspend\n");
 	struct sunxi_g2d *g2d = dev_get_drvdata(device);
 
 	g2d_hw_close(g2d);
