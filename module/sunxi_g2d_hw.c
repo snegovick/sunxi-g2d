@@ -49,7 +49,7 @@ static uint32_t v4l2_fmt_to_hw_id(struct v4l2_pix_format *v4l2_pix_fmt)
 
 void g2d_hw_open(struct sunxi_g2d *g2d)
 {
-  printk("g2d_hw_open\n");
+  pr_debug("g2d_hw_open\n");
 	g2d_set_bits(g2d, G2D_SCLK_GATE,
 			(G2D_SCLK_GATE_MIXER | G2D_SCLK_GATE_ROT));
 	g2d_set_bits(g2d, G2D_HCLK_GATE,
@@ -60,7 +60,7 @@ void g2d_hw_open(struct sunxi_g2d *g2d)
 
 void g2d_hw_close(struct sunxi_g2d *g2d)
 {
-  printk("g2d_hw_close\n");
+  pr_debug("g2d_hw_close\n");
 	g2d_write(g2d, G2D_SCLK_GATE, 0);
 	g2d_write(g2d, G2D_HCLK_GATE, 0);
 	g2d_write(g2d, G2D_AHB_RESET, 0);
@@ -68,7 +68,7 @@ void g2d_hw_close(struct sunxi_g2d *g2d)
 
 void g2d_hw_reset(struct sunxi_g2d *g2d)
 {
-  printk("g2d_hw_reset\n");
+  pr_debug("g2d_hw_reset\n");
 	g2d_write(g2d, G2D_AHB_RESET, 0);
 	g2d_set_bits(g2d, G2D_AHB_RESET, 
 			(G2D_AHB_MIXER_RESET | G2D_AHB_ROT_RESET));
@@ -76,13 +76,13 @@ void g2d_hw_reset(struct sunxi_g2d *g2d)
 
 static void g2d_mixer_irq_enable(struct sunxi_g2d *g2d)
 {
-  printk("g2d_mixer_irq_enable\n");
+  pr_debug("g2d_mixer_irq_enable\n");
 	g2d_write(g2d, G2D_MIXER_INT, G2D_MIXER_INT_FINISH_IRQ_EN);
 }
 
 int g2d_mixer_irq_query(struct sunxi_g2d *g2d)
 {
-  printk("g2d_mixer_irq_query\n");
+  pr_debug("g2d_mixer_irq_query\n");
 	uint32_t tmp;
 
 	tmp = g2d_read(g2d, G2D_MIXER_INT);
@@ -98,14 +98,14 @@ int g2d_mixer_irq_query(struct sunxi_g2d *g2d)
 
 void g2d_mixer_reset(struct sunxi_g2d *g2d)
 {
-  printk("g2d_mixer_reset\n");
+  pr_debug("g2d_mixer_reset\n");
 	g2d_clr_bits(g2d, G2D_AHB_RESET, G2D_AHB_MIXER_RESET);
 	g2d_set_bits(g2d, G2D_AHB_RESET, G2D_AHB_MIXER_RESET);
 }
 
 void g2d_rot_reset(struct sunxi_g2d *g2d)
 {
-  printk("g2d_rot_reset\n");
+  pr_debug("g2d_rot_reset\n");
 	g2d_clr_bits(g2d, G2D_AHB_RESET, G2D_AHB_MIXER_RESET);
 	g2d_set_bits(g2d, G2D_AHB_RESET, G2D_AHB_MIXER_RESET);
 }
@@ -119,7 +119,7 @@ void g2d_rot_reset(struct sunxi_g2d *g2d)
  */
 void fmt2yuvcnt(uint32_t format, uint32_t *ycnt, uint32_t *ucnt, uint32_t *vcnt)
 {
-  printk("g2d fmt2yuvcnt\n");
+  pr_debug("g2d fmt2yuvcnt\n");
 	*ycnt = 0;
 	*ucnt = 0;
 	*vcnt = 0;
@@ -187,7 +187,7 @@ void fmt2yuvcnt(uint32_t format, uint32_t *ycnt, uint32_t *ucnt, uint32_t *vcnt)
 /* TODO: convert layer_no to an enumeration */
 void g2d_fc_set(struct sunxi_g2d *g2d, uint32_t layer_no, uint32_t color_value)
 {
-  printk("g2d_fc_set\n");
+  pr_debug("g2d_fc_set\n");
 	G2D_INFO_MSG("FILLCOLOR: sel: %d, color: 0x%x\n", layer_no, color_value);
 
 	switch (layer_no) 
@@ -225,7 +225,7 @@ void g2d_fc_set(struct sunxi_g2d *g2d, uint32_t layer_no, uint32_t color_value)
 void g2d_bldin_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 		uint32_t pipe_no)
 {
-  printk("g2d_bldin_set\n");
+  pr_debug("g2d_bldin_set\n");
 	uint32_t rect_x, rect_y, rect_w, rect_h;
 	uint32_t reg;
 	uint32_t tmp;
@@ -275,7 +275,7 @@ void g2d_bldin_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
  */
 void g2d_bld_cs_set(struct sunxi_g2d *g2d, struct g2d_frame *frm)
 {
-  printk("g2d_bld_cs_set\n");
+  pr_debug("g2d_bld_cs_set\n");
 	uint32_t fmt_hw_id;
 
 	fmt_hw_id = v4l2_fmt_to_hw_id(&frm->v4l2_pix_fmt);
@@ -289,7 +289,7 @@ void g2d_bld_cs_set(struct sunxi_g2d *g2d, struct g2d_frame *frm)
 void g2d_wb_set(struct sunxi_g2d *g2d, struct g2d_frame *frm, 
 		dma_addr_t addr[3])
 {
-  printk("g2d_wb_set\n");
+  pr_debug("g2d_wb_set\n");
 	uintptr_t addr0, addr1, addr2;
 	uint32_t fmt_hw_id;
 	uint32_t ycnt, ucnt, vcnt;
@@ -382,7 +382,7 @@ void g2d_wb_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 void g2d_vlayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 		dma_addr_t addr[3], uint32_t layer_alpha)
 {
-  printk("g2d_vlayer_set\n");
+  pr_debug("g2d_vlayer_set\n");
 	uintptr_t addr0, addr1, addr2;
 	uint32_t fmt_hw_id;
 	uint32_t ycnt, ucnt, vcnt;
@@ -480,7 +480,7 @@ void g2d_vlayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 
 void g2d_rectfill(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3])
 {
-  printk("g2d_rectfill\n");
+  pr_debug("g2d_rectfill\n");
 	/* Maybe only reset the mixer ?? */
 	// g2d_mixer_reset(ctx->g2d);
 	g2d_hw_reset(ctx->g2d); 
