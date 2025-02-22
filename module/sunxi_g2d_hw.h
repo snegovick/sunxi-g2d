@@ -73,23 +73,6 @@ enum g2d_fmt_hw_id {
 	G2D_FORMAT_MAX,
 };
 
-/* TODO: 
- * setup debug_info as a sysfs attribute that controls
- * G2D_INFO_MSG
- */
-extern uint32_t debug_info;
-
-#define G2D_INFO_MSG(fmt, args...) \
-	do {\
-		if (1)\
-		pr_info("[G2D] (%s) line:%d: " fmt, __func__, __LINE__, ##args);\
-	} while (0)
-
-#define G2D_ERR_MSG(fmt, args...) \
-	do {\
-		pr_warn("[G2D] (%s) line:%d: " fmt, __func__, __LINE__, ##args);\
-	} while (0)
-
 void g2d_hw_open(struct sunxi_g2d *g2d);
 void g2d_hw_close(struct sunxi_g2d *g2d);
 int g2d_mixer_irq_query(struct sunxi_g2d *g2d);

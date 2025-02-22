@@ -43,6 +43,12 @@ enum g2d_alpha_bld_mode {
 	G2D_MIXER_ALPHA,
 };
 
+enum g2d_debug_level {
+  gdl_disabled = 0,
+  gdl_info,
+  gdl_debug,
+};
+
 struct g2d_fmt {
 	u32	fourcc;
 	int depth;
@@ -69,11 +75,13 @@ struct sunxi_g2d {
 	struct mutex		dev_mutex;
 
 	struct device		*dev;
-    struct v4l2_device	v4l2_dev;
+  struct v4l2_device	v4l2_dev;
 	struct video_device	vfd;
 	struct v4l2_m2m_dev	*m2m_dev;
 
 	struct g2d_fmt *supported_fmts;
+
+  enum g2d_debug_level debug_level;
 };
 
 struct sunxi_g2d_ctx {
@@ -94,5 +102,27 @@ struct sunxi_g2d_ctx {
 };
 
 struct g2d_fmt *find_fmt(struct v4l2_pix_format *);
+
+#define G2D_INFO_MSG(g2d, ...)                                          \
+	do {                                                                  \
+		if (g2d->debug_level >= gdl_info) {                                  \
+      printk("[G2D info] (%s) line:%d: ", __func__, __LINE__);          \
+      printk(__VA_ARGS__);                                              \
+    }                                                                   \
+	} while (0)
+
+#define G2D_DEBUG_MSG(g2d, ...)                                         \
+	do {                                                                  \
+    if (g2d->debug_level >= gdl_debug) {                                 \
+      printk("[G2D debug] (%s) line:%d: ", __func__, __LINE__);         \
+      printk(__VA_ARGS__);                                              \
+    }                                                                   \
+	} while (0)
+
+#define G2D_ERR_MSG(g2d, ...)                                           \
+	do {                                                                  \
+    printk("[G2D error] (%s) line:%d: ", __func__, __LINE__);           \
+    printk(__VA_ARGS__);                                                \
+	} while (0)
 
 #endif
