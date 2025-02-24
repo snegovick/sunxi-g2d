@@ -90,33 +90,42 @@
 #define V0_VDS_CTL1     (0x3C + G2D_V0)
 
 /* LAY0 UI register */
-#define UI0_ATTR        (0x00 + G2D_UI0)
+#define UI0_ATTCTL        (0x00 + G2D_UI0)
+#define UIX_ATTCTL_EN            BIT(0)
+#define UIX_ATTCTL_ALPHA_MODE    GENMASK(2, 1)
+#define UIX_ATTCTL_FILLCOLOR_EN  BIT(4)
+#define UIX_ATTCTL_FBFMT         GENMASK(12, 8)
+#define UIX_ATTCTL_PREMUL_CTL    GENMASK(17, 16)
+#define UIX_ATTCTL_GLBALPHA      GENMASK(31, 24)
+#define UIX_MBSIZE_WIDTH   GENMASK(12, 0)
+#define UIX_MBSIZE_HEIGHT  GENMASK(28, 16)
+
 #define UI0_MBSIZE      (0x04 + G2D_UI0)
 #define UI0_COOR        (0x08 + G2D_UI0)
 #define UI0_PITCH       (0x0C + G2D_UI0)
 #define UI0_LADD        (0x10 + G2D_UI0)
 #define UI0_FILLC       (0x14 + G2D_UI0)
-#define UI0_HADD        (0x18 + G2D_UI0)
+#define UI0_HADDR        (0x18 + G2D_UI0)
 #define UI0_SIZE        (0x1C + G2D_UI0)
 
 /* LAY1 UI register */
-#define UI1_ATTR        (0x00 + G2D_UI1)
+#define UI1_ATTCTL        (0x00 + G2D_UI1)
 #define UI1_MBSIZE      (0x04 + G2D_UI1)
 #define UI1_COOR        (0x08 + G2D_UI1)
 #define UI1_PITCH       (0x0C + G2D_UI1)
 #define UI1_LADD        (0x10 + G2D_UI1)
 #define UI1_FILLC       (0x14 + G2D_UI1)
-#define UI1_HADD        (0x18 + G2D_UI1)
+#define UI1_HADDR        (0x18 + G2D_UI1)
 #define UI1_SIZE        (0x1C + G2D_UI1)
 
 /* LAY2 UI register */
-#define UI2_ATTR        (0x00 + G2D_UI2)
+#define UI2_ATTCTL        (0x00 + G2D_UI2)
 #define UI2_MBSIZE      (0x04 + G2D_UI2)
 #define UI2_COOR        (0x08 + G2D_UI2)
 #define UI2_PITCH       (0x0C + G2D_UI2)
 #define UI2_LADD        (0x10 + G2D_UI2)
 #define UI2_FILLC       (0x14 + G2D_UI2)
-#define UI2_HADD        (0x18 + G2D_UI2)
+#define UI2_HADDR        (0x18 + G2D_UI2)
 #define UI2_SIZE        (0x1C + G2D_UI2)
 
 /* VSU register */
@@ -258,5 +267,22 @@
 #define ROT_OHADD1         (0xAC + G2D_ROT)
 #define ROT_OLADD2         (0xB0 + G2D_ROT)
 #define ROT_OHADD2         (0xB4 + G2D_ROT)
+
+/* Blit color modes */
+#define BLT_NONE            0x00000000
+#define BLT_PIXEL_ALPHA     0x00000001
+#define BLT_PLANE_ALPHA     0x00000002
+#define BLT_MULTI_ALPHA     0x00000004
+#define BLT_SRC_COLORKEY    0x00000008
+#define BLT_DST_COLORKEY    0x00000010
+#define BLT_FLIP_HORIZONTAL 0x00000020
+#define BLT_FLIP_VERTICAL   0x00000040
+#define BLT_ROTATE90        0x00000080
+#define BLT_ROTATE180       0x00000100
+#define BLT_ROTATE270       0x00000200
+#define BLT_MIRROR45        0x00000400
+#define BLT_MIRROR135       0x00000800
+#define BLT_SRC_PREMULTIPLY 0x00001000
+#define BLT_DST_PREMULTIPLY 0x00002000
 
 #endif

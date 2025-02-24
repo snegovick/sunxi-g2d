@@ -199,7 +199,7 @@ void g2d_fc_set(struct sunxi_g2d *g2d, uint32_t layer_no, uint32_t color_value)
 
 		case 1:
 			/* UI0 Layer */
-			g2d_set_bits(g2d, UI0_ATTR, BIT(4));
+			g2d_set_bits(g2d, UI0_ATTCTL, BIT(4));
 			g2d_write(g2d, UI0_FILLC, color_value);
 			break;
 
@@ -476,6 +476,101 @@ void g2d_vlayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 							addr0, addr1, addr2);
 }
 
+int g2d_uilayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm, dma_addr_t addr[3], int layer_no, uint32_t layer_alpha)
+{
+	uintptr_t addr0;
+	uint32_t ycnt, ucnt, vcnt;
+	uint32_t pitch0;
+	int ret = -1;
+	uint32_t tmp;
+
+	uint32_t reg_attctl;
+	uint32_t reg_size;
+	uint32_t reg_mbsize;
+	uint32_t reg_coor;
+	uint32_t reg_pitch;
+	uint32_t reg_laddr0;
+	uint32_t reg_haddr;
+
+	switch (layer_no) {
+	case 0:
+		reg_attctl = UI0_ATTCTL;
+		reg_size = UI0_SIZE;
+		reg_size = UI0_MBSIZE;
+		reg_coor = UI0_COOR;
+		reg_pitch = UI0_PITCH;
+		reg_laddr0 = UI0_LADDR0;
+		reg_haddr = UI0_HADDR;
+		break;
+	case 1:
+		reg_attctl = UI1_ATTCTL;
+		reg_size = UI1_SIZE;
+		reg_size = UI1_MBSIZE;
+		reg_coor = UI1_COOR;
+		reg_pitch = UI1_PITCH;
+		reg_laddr0 = UI1_LADDR0;
+		reg_haddr = UI1_HADDR;
+		break;
+	case 2:
+		reg_attctl = UI2_ATTCTL;
+		reg_size = UI2_SIZE;
+		reg_size = UI2_MBSIZE;
+		reg_coor = UI2_COOR;
+		reg_pitch = UI2_PITCH;
+		reg_laddr0 = UI2_LADDR0;
+		reg_haddr = UI2_HADDR;
+		break;
+	default:
+		v4l2_err(&g2d->v4l2_dev, "UI layer out of range\n");
+		return -EINVAL;
+	}
+
+	tmp = FIELD_PREP(UIX_ATTCTL_GLBALPHA, layer_alpha);
+	if (frm->premult_alpha)
+		tmp |= FIELD_PREP(UIX_ATTCTL_PREMUL_CTL, 0x2);
+
+	fmt_hw_id = v4l2_fmt_to_hw_id(&frm->v4l2_pix_fmt);
+	tmp |= FIELD_PREP(UIX_ATTCTL_FBFMT, fmt_hw_id);
+	tmp |= FIELD_PREP(UIX_ATTCTL_ALPHA_MODE, frm->alpha_bld_mode);
+	tmp |= FIELD_PREP(UIX_ATTCTL_EN, 1);
+	g2d_write(g2d, reg_attctl, tmp);
+
+	tmp = FIELD_PREP(UIX_MBSIZE_WIDTH, (frm->sel.r.width == 0 ?
+				0 : frm->sel.r.width - 1));
+	tmp |= FIELD_PREP(UIX_MBSIZE_HEIGHT, (frm->sel.r.height == 0 ?
+				0 : frm->sel.r.height - 1));
+	g2d_write(g2d, reg_mbsize, tmp); //mem.bits
+
+	g2d_write(g2d, reg_size, tmp); //winsize
+	g2d_write(g2d, reg_coor, 0); //dwval
+
+	fmt2yuvcnt(fmt_hw_id, &ycnt, &ucnt, &vcnt);
+
+	pitch0 = ALIGN(ycnt * frm->v4l2_pix_fmt.width, frm->alignment);
+	g2d_write(g2d, reg_pitch, pitch0);
+
+	/* addr0 = */
+	/*     p_img->laddr[0] + ((__u64) p_img->haddr[0] << 32) + */
+	/*     pitch0 * p_img->clip_rect.y + ycnt * p_img->clip_rect.x; */
+	/* p_reg->ovl_mem_low_addr0 = addr0 & 0xffffffff; */
+	/* p_reg->ovl_mem_high_addr = (addr0 >> 32) & 0xff; */
+
+	addr0 = addr[0] + pitch0 * frm->sel.r.top + ycnt * frm->sel.r.left;
+	g2d_write(g2d, reg_laddr0, addr0 & GENMASK(31, 0));
+
+	/* The G2D can support 40-bit bus addresses. Only fill V0_HADDR if we're dealing
+	 * with 64-bit DMA addresses
+	 */
+#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
+	tmp = FIELD_PREP(UIX_HADDR0, addr[0]);
+	g2d_write(g2d, reg_haddr, tmp);
+#endif
+
+  //TODO: port the following
+  /* if (p_img->bbuff == 0) */
+	/* 	g2d_ovl_u_fc_set(p_ovl_u, sel, p_img->color); */
+}
+
 void g2d_rectfill(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3])
 {
 	struct sunxi_g2d *g2d = ctx->g2d;
@@ -505,4 +600,40 @@ void g2d_rectfill(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3])
 	G2D_INFO_MSG(g2d, "Starting the module");
 	g2d_mixer_irq_enable(ctx->g2d);
 	g2d_set_bits(ctx->g2d, G2D_MIXER_CTL, G2D_MIXER_CTL_START);
+}
+
+void g2d_blit(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3])
+{
+	struct sunxi_g2d *g2d = ctx->g2d;
+	G2D_DEBUG_MSG(g2d, "g2d_rectfill\n");
+	/* Maybe only reset the mixer ?? */
+	// g2d_mixer_reset(ctx->g2d);
+	g2d_hw_reset(ctx->g2d);
+
+	/* prepare the mixer video layer */
+	g2d_uilayer_set(ctx->g2d, &ctx->dst, addr, ctx->rectfill_color_alpha);
+
+
+	/* /\* set the fill color *\/ */
+	/* g2d_fc_set(ctx->g2d, 0, ctx->rectfill_color); */
+
+	/* g2d_bldin_set(ctx->g2d, &ctx->dst, 0); */
+	/* g2d_bld_cs_set(ctx->g2d, &ctx->dst); */
+
+	/* /\* ROP sel ch0 pass *\/ */
+	/* g2d_write(ctx->g2d, ROP_CTL, ROP_CTL_BLUE_BYPASS_EN */
+	/* 			| ROP_CTL_GREEN_BYPASS_EN */
+	/* 			| ROP_CTL_RED_BYPASS_EN */
+	/* 			| ROP_CTL_ALPHA_BYPASS_EN); */
+
+	/* g2d_wb_set(ctx->g2d, &ctx->dst, addr); */
+
+	/* /\* start the module *\/ */
+	/* G2D_INFO_MSG(g2d, "Starting the module"); */
+	/* g2d_mixer_irq_enable(ctx->g2d); */
+	/* g2d_set_bits(ctx->g2d, G2D_MIXER_CTL, G2D_MIXER_CTL_START); */
+	ktime_t ktime;
+	ktime = ktime_set(TIMEOUT_SEC, TIMEOUT_NSEC);
+	hrtimer_start( &ctx->g2d->g2d_hrtimer, ktime, HRTIMER_MODE_REL);
+>>>>>>> 01283b9 (Add g2d_uilayer_set proc for later use in blit procs)
 }
