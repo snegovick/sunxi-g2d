@@ -504,12 +504,12 @@ static int g2d_try_selection(struct file *file, void *priv,
 
 	if (V4L2_TYPE_IS_CAPTURE(sel->type)) {
 		if (sel->target != V4L2_SEL_TGT_COMPOSE) {
-			G2D_DEBUG_MSG(g2d, "g2d try selection not tgt compose\n");
+			G2D_ERR_MSG(g2d, "g2d try selection not tgt compose\n");
 			return -EINVAL;
 		}
 	} else if (V4L2_TYPE_IS_OUTPUT(sel->type)) {
 		if (sel->target != V4L2_SEL_TGT_CROP) {
-			G2D_DEBUG_MSG(g2d, "g2d try selection not tgt crop\n");
+			G2D_ERR_MSG(g2d, "g2d try selection not tgt crop\n");
 			return -EINVAL;
 		}
 	}
@@ -522,17 +522,17 @@ static int g2d_try_selection(struct file *file, void *priv,
 
 	if ((sel->r.left > frm->v4l2_pix_fmt.width - 1) ||
 			(sel->r.top > frm->v4l2_pix_fmt.height - 1)) {
-		G2D_DEBUG_MSG(g2d, "g2d try selection einval 1\n");
+		v4l2_err(&g2d->v4l2_dev, "selection rect left or bottom boundary out of limits\n");
 		return -EINVAL;
 	}
 
 	if ((sel->r.left + sel->r.width) > (frm->v4l2_pix_fmt.width - 1)) {
-		G2D_DEBUG_MSG(g2d, "g2d try selection einval 2\n");
+		v4l2_err(&g2d->v4l2_dev, "selection rect right boundary out of limits\n");
 		return -EINVAL;
 	}
 
 	if ((sel->r.top + sel->r.height) > (frm->v4l2_pix_fmt.height - 1)) {
-		G2D_DEBUG_MSG(g2d, "g2d try selection einval 3\n");
+		v4l2_err(&g2d->v4l2_dev, "selection rect bottom boundary out of limits\n");
 		return -EINVAL;
 	}
 
@@ -556,7 +556,7 @@ static int g2d_s_selection(struct file *file, void *priv,
 
 	frm = get_frame(ctx, sel->type);
 	if (IS_ERR(frm)) {
-		G2D_DEBUG_MSG(g2d, "g2d s selection is_err\n");
+		G2D_ERR_MSG(g2d, "g2d s selection is_err\n");
 		return PTR_ERR(frm);
 	}
 
@@ -609,13 +609,13 @@ static int g2d_queue_setup(struct vb2_queue *vq, unsigned int *nbuffers,
 
 	frm = get_frame(ctx, vq->type);
 	if (IS_ERR(frm)) {
-		G2D_DEBUG_MSG(g2d, "g2d queue_setup is_err\n");
+		G2D_ERR_MSG(g2d, "g2d queue_setup is_err\n");
 		return PTR_ERR(frm);
 	}
 
 	if (*nplanes) {
 		if (sizes[0] < frm->v4l2_pix_fmt.sizeimage) {
-			G2D_DEBUG_MSG(g2d, "g2d queue_setup bad size\n");
+			G2D_ERR_MSG(g2d, "g2d queue_setup bad size\n");
 			return -EINVAL;
 		}
 	} else {
@@ -636,11 +636,11 @@ static int g2d_buf_prepare(struct vb2_buffer *vb)
 
 	frm = get_frame(ctx, vq->type);
 	if (IS_ERR(frm)) {
-		G2D_DEBUG_MSG(g2d, "g2d queue_setup is_err\n");
+		G2D_ERR_MSG(g2d, "g2d queue_setup is_err\n");
 		return PTR_ERR(frm);
 	}
 	if (vb2_plane_size(vb, 0) < frm->v4l2_pix_fmt.sizeimage) {
-		G2D_DEBUG_MSG(g2d, "g2d queue_setup einval\n");
+		G2D_ERR_MSG(g2d, "plane size mismatch\n");
 		return -EINVAL;
 	}
 
