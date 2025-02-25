@@ -43,6 +43,13 @@ enum g2d_alpha_bld_mode {
 	G2D_MIXER_ALPHA,
 };
 
+enum g2d_rectfill_bld_mode {
+	G2D_FILL_NONE = 0,
+	G2D_FILL_PIXEL_ALPHA,
+	G2D_FILL_PLANE_ALPHA,
+	G2D_FILL_MULTI_ALPHA,
+};
+
 enum g2d_debug_level {
   gdl_disabled = 0,
   gdl_info,
@@ -94,9 +101,10 @@ struct sunxi_g2d_ctx {
 	/* only useful for rectfill operations */
 	uint32_t rectfill_color;
 	uint32_t rectfill_color_alpha;
-	
+
 	/* active g2d operation */
 	enum g2d_op chosen_g2d_op;
+	enum g2d_rectfill_bld_mode rectfill_bld_mode;
 
 	struct v4l2_ctrl_handler ctrl_handler;
 };
