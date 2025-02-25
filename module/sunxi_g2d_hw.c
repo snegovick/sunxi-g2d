@@ -44,7 +44,7 @@ static uint32_t v4l2_fmt_to_hw_id(struct v4l2_pix_format *v4l2_pix_fmt)
 	struct g2d_fmt *fmt;
 
 	fmt = find_fmt(v4l2_pix_fmt); // !! (rectfill assumption) src_fmt
-	return (fmt) ? fmt->hw_id : G2D_FORMAT_BGRX8888;
+	return (fmt) ? fmt->hw_id : G2D_FORMAT_XBGR8888;
 }
 
 void g2d_hw_open(struct sunxi_g2d *g2d)

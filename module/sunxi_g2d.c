@@ -43,7 +43,7 @@ static struct g2d_fmt g2d_supported_fmts[] = {
 	{
 		.fourcc	= V4L2_PIX_FMT_XBGR32,
 		.depth	= 32,
-		.hw_id	= G2D_FORMAT_BGRX8888,
+		.hw_id	= G2D_FORMAT_XBGR8888,
 	},
 };
 
