@@ -103,9 +103,9 @@
 #define UI0_MBSIZE      (0x04 + G2D_UI0)
 #define UI0_COOR        (0x08 + G2D_UI0)
 #define UI0_PITCH       (0x0C + G2D_UI0)
-#define UI0_LADD        (0x10 + G2D_UI0)
+#define UI0_LADDR0      (0x10 + G2D_UI0)
 #define UI0_FILLC       (0x14 + G2D_UI0)
-#define UI0_HADDR        (0x18 + G2D_UI0)
+#define UI0_HADDR       (0x18 + G2D_UI0)
 #define UI0_SIZE        (0x1C + G2D_UI0)
 
 /* LAY1 UI register */
@@ -113,9 +113,9 @@
 #define UI1_MBSIZE      (0x04 + G2D_UI1)
 #define UI1_COOR        (0x08 + G2D_UI1)
 #define UI1_PITCH       (0x0C + G2D_UI1)
-#define UI1_LADD        (0x10 + G2D_UI1)
+#define UI1_LADDR0      (0x10 + G2D_UI1)
 #define UI1_FILLC       (0x14 + G2D_UI1)
-#define UI1_HADDR        (0x18 + G2D_UI1)
+#define UI1_HADDR       (0x18 + G2D_UI1)
 #define UI1_SIZE        (0x1C + G2D_UI1)
 
 /* LAY2 UI register */
@@ -123,16 +123,32 @@
 #define UI2_MBSIZE      (0x04 + G2D_UI2)
 #define UI2_COOR        (0x08 + G2D_UI2)
 #define UI2_PITCH       (0x0C + G2D_UI2)
-#define UI2_LADD        (0x10 + G2D_UI2)
+#define UI2_LADDR0      (0x10 + G2D_UI2)
 #define UI2_FILLC       (0x14 + G2D_UI2)
-#define UI2_HADDR        (0x18 + G2D_UI2)
+#define UI2_HADDR       (0x18 + G2D_UI2)
 #define UI2_SIZE        (0x1C + G2D_UI2)
 
 /* VSU register */
 #define VS_CTRL         (0x000 + G2D_VSU)
+#define VS_CTRL_EN                 BIT(0)
+#define VS_CTRL_COEFF_ACCESS_SEL_EN BIT(8)
+#define VS_CTRL_FILTER_TYPE        BIT(16)
+#define VS_CTRL_CORE_RST           BIT(30)
+#define VS_CTRL_BIST_EN            BIT(31)
+
 #define VS_OUT_SIZE     (0x040 + G2D_VSU)
+#define VS_OUT_SIZE_WIDTH GENMASK(12, 0)
+#define VS_OUT_SIZE_HEIGHT GENMASK(28, 16)
+
 #define VS_GLB_ALPHA    (0x044 + G2D_VSU)
+#define VS_GLB_ALPHA_GLB_ALPHA GENMASK(7, 0)
+
 #define VS_Y_SIZE       (0x080 + G2D_VSU)
+
+/* Applicable to y_size, c_size */
+#define VS_XSIZE_Y_WIDTH GENMASK(12, 0)
+#define VS_XSIZE_Y_HEIGHT GENMASK(28, 16)
+
 #define VS_Y_HSTEP      (0x088 + G2D_VSU)
 #define VS_Y_VSTEP      (0x08C + G2D_VSU)
 #define VS_Y_HPHASE     (0x090 + G2D_VSU)
@@ -142,9 +158,25 @@
 #define VS_C_VSTEP      (0x0CC + G2D_VSU)
 #define VS_C_HPHASE     (0x0D0 + G2D_VSU)
 #define VS_C_VPHASE0    (0x0D8 + G2D_VSU)
-#define VS_Y_HCOEF0     (0x200 + G2D_VSU)
-#define VS_Y_VCOEF0     (0x300 + G2D_VSU)
-#define VS_C_HCOEF0     (0x400 + G2D_VSU)
+#define VS_Y_HCOEFF0    (0x200 + G2D_VSU)
+#define VS_Y_VCOEFF0    (0x300 + G2D_VSU)
+#define VS_C_HCOEFF0    (0x400 + G2D_VSU)
+
+/* Applicable to y_hstep, y_vstep, y_hphase, y_vphase0, c_hstep, c_vstep, c_hphase, c_vphase0 */
+#define VS_XSTEP_FRAC GENMASK(19, 1)
+#define VS_XSTEP_INT GENMASK(31, 24)
+
+#define VSU_PHASE_NUM            32
+#define VSU_PHASE_FRAC_BITWIDTH  19
+#define VSU_PHASE_FRAC_REG_SHIFT 1
+#define VSU_FB_FRAC_BITWIDTH     32
+
+#define VSU_ZOOM0_SIZE	1
+#define VSU_ZOOM1_SIZE	8
+#define VSU_ZOOM2_SIZE	4
+#define VSU_ZOOM3_SIZE	1
+#define VSU_ZOOM4_SIZE	1
+#define VSU_ZOOM5_SIZE	1
 
 /* MIXER VIDEO BLENDER registers */
 #define G2D_BLD         (0x00400)
@@ -168,7 +200,14 @@
 
 #define BLD_BK_COLOR    (0x044 + G2D_BLD)
 #define BLD_OUT_SIZE    (0x048 + G2D_BLD)
+#define BLD_OUT_SIZE_WIDTH GENMASK(12, 0)
+#define BLD_OUT_SIZE_HEIGHT GENMASK(28, 16)
+
 #define BLD_CTL         (0x04C + G2D_BLD)
+#define BLD_CTL_BLEND_PFS GENMASK(3, 0)
+#define BLD_CTL_BLEND_PFD GENMASK(11, 8)
+#define BLD_CTL_BLEND_AFS GENMASK(19, 16)
+#define BLD_CTL_BLEND_AFD GENMASK(27, 24)
 #define BLD_KEY_CTL     (0x050 + G2D_BLD)
 #define BLD_KEY_CON     (0x054 + G2D_BLD)
 #define BLD_KEY_MAX     (0x058 + G2D_BLD)
@@ -186,6 +225,18 @@
 #define ROP_CTL_ALPHA_BYPASS_EN  BIT(7)
 
 #define ROP_INDEX0      (0x084 + G2D_BLD)
+#define ROP_INDEX0_NODE0 GENMASK(2, 0)
+#define ROP_INDEX0_NODE1 BIT(3)
+#define ROP_INDEX0_NODE2 BIT(4)
+#define ROP_INDEX0_NODE3 BIT(5)
+#define ROP_INDEX0_NODE4 GENMASK(9, 6)
+#define ROP_INDEX0_NODE5 BIT(10)
+#define ROP_INDEX0_NODE6 GENMASK(14, 11)
+#define ROP_INDEX0_NODE7 BIT(15)
+#define ROP_INDEX0_CH0_IGN_EN BIT(16)
+#define ROP_INDEX0_CH1_IGN_EN BIT(17)
+#define ROP_INDEX0_CH2_IGN_EN BIT(18)
+
 #define ROP_INDEX1      (0x088 + G2D_BLD)
 #define BLD_CSC_CTL     (0x100 + G2D_BLD)
 #define BLD_CSC0_COEF00 (0x110 + G2D_BLD)

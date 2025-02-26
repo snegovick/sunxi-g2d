@@ -78,5 +78,8 @@ void g2d_hw_close(struct sunxi_g2d *g2d);
 int g2d_mixer_irq_query(struct sunxi_g2d *g2d);
 void g2d_mixer_reset(struct sunxi_g2d *g2d);
 void g2d_rectfill(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3]);
+void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logicop logicop);
+uint32_t g2d_read(struct sunxi_g2d *g2d, uint32_t reg);
+void g2d_write(struct sunxi_g2d *g2d, uint32_t reg, uint32_t val);
 
 #endif

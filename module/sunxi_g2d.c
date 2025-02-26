@@ -31,9 +31,13 @@
 #define V4L2_CID_SUNXI_G2D_IN_ALIGNMENT		(V4L2_CID_CUSTOM_BASE + 3)
 #define V4L2_CID_SUNXI_G2D_OUT_ALPHA_MODE	(V4L2_CID_CUSTOM_BASE + 4)
 #define V4L2_CID_SUNXI_G2D_OUT_ALIGNMENT	(V4L2_CID_CUSTOM_BASE + 5)
+
 /* Rectfill specific ctrls */
-#define V4L2_CID_SUNXI_G2D_RECTFILL_COLOR		(V4L2_CID_CUSTOM_BASE + 6)
-#define V4L2_CID_SUNXI_G2D_RECTFILL_COLOR_ALPHA	(V4L2_CID_CUSTOM_BASE + 7)
+#define V4L2_CID_SUNXI_G2D_RECTFILL_COLOR		(V4L2_CID_CUSTOM_BASE + 20)
+#define V4L2_CID_SUNXI_G2D_RECTFILL_COLOR_ALPHA	(V4L2_CID_CUSTOM_BASE + 21)
+
+/* Blit specific ctrls */
+#define V4L2_CID_SUNXI_G2D_BLT_LOGICOP		(V4L2_CID_CUSTOM_BASE + 40)
 
 /*
  * TODO: Add all supported formats. For now only include formats that
@@ -54,6 +58,7 @@ static struct g2d_fmt g2d_supported_fmts[] = {
 #define DEF_PIX_FMT V4L2_PIX_FMT_XBGR32
 #define DEF_RECTFILL_COLOR 0xffff0100
 #define DEF_RECTFILL_COLOR_ALPHA 0xff
+#define DEF_BLT_LOGICOP G2D_BLT_COPYPEN
 
 #define MIN_SRC_BUFS 1
 #define MIN_DST_BUFS 1
@@ -129,6 +134,10 @@ static int g2d_s_ctrl(struct v4l2_ctrl *ctrl)
 		G2D_DEBUG_MSG(g2d, "V4L2_CID_SUNXI_G2D_RECTFILL_COLOR_ALPHA: %i\n", ctrl->p_new.p_u8[0]);
 		ctx->rectfill_color_alpha = ctrl->p_new.p_u8[0];
 		break;
+	case V4L2_CID_SUNXI_G2D_BLT_LOGICOP:
+		G2D_DEBUG_MSG(g2d, "V4L2_CID_SUNXI_G2D_BLT_LOGICOP: %i\n", ctrl->val);
+		ctx->blt_logicop = ctrl->val;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -157,7 +166,7 @@ static const struct v4l2_ctrl_ops g2d_ctrl_ops = {
 
 static const char * const g2d_op_menu[] = {
 	"Rectfill",
-	"Bitblit",
+	"Bitblt",
 	NULL,
 };
 
@@ -165,6 +174,27 @@ static const char * const g2d_alpha_mode_menu[] = {
 	"Pixel alpha",
 	"Plane alpha",
 	"Multi-Plane alpha",
+	NULL,
+};
+
+static const char * const g2d_blt_logicop[] = {
+	"Blackness",
+	"Notmergepen",
+	"Masknotpen",
+	"Notcopypen",
+	"Maskpennot",
+	"Not",
+	"Xorpen",
+	"Notmaskpen",
+	"Maskpen",
+	"Notxorpen",
+	"Nop",
+	"Mergenotpen",
+	"Copypen",
+	"Mergepennot",
+	"Mergepen",
+	"Whiteness",
+	"None",
 	NULL,
 };
 
@@ -189,7 +219,7 @@ static const struct v4l2_ctrl_config g2d_ctrls[] = {
 		.def = 0,
 		.qmenu = g2d_alpha_mode_menu,
 	},
-  {
+	{
 		.ops = &g2d_ctrl_ops,
 		.id = V4L2_CID_SUNXI_G2D_OUT_ALPHA_MODE,
 		.type = V4L2_CTRL_TYPE_MENU,
@@ -241,6 +271,16 @@ static const struct v4l2_ctrl_config g2d_ctrls[] = {
 		.step = 1,
 		.dims = { 1 },
 	},
+	{
+		.ops = &g2d_ctrl_ops,
+		.id = V4L2_CID_SUNXI_G2D_BLT_LOGICOP,
+		.type = V4L2_CTRL_TYPE_MENU,
+		.name = "G2D blt logic operation",
+		.min = 0,
+		.max = 16, /* TODO: verify that G2D_BLT_NONE is a valid op, otherwise reduce to 15 */
+		.def = DEF_BLT_LOGICOP,
+		.qmenu = g2d_blt_logicop,
+	},
 };
 
 #define NUM_CTRLS ARRAY_SIZE(g2d_ctrls)
@@ -253,7 +293,8 @@ static int g2d_job_ready(void *priv)
 
 	switch (ctx->chosen_g2d_op) {
 	case G2D_RECTFILL:
-		G2D_DEBUG_MSG(g2d, "g2d job ready OP RECTFILL\n");
+  case G2D_BITBLT:
+		G2D_DEBUG_MSG(g2d, "g2d job ready\n");
 		/*
 		 * In reality Rectfill requires no source buffer and only a single
 		 * destination buffer and its selection to use as the fill rectangle
@@ -299,7 +340,12 @@ static void g2d_device_run(void *priv)
 		g2d_rectfill(ctx, addr);
 
 		break;
-
+  case G2D_BITBLT:
+    /* TODO: not sure how addr should be filled */
+		addr[0] = dst_addr;
+		addr[1] = 0;
+		addr[2] = 0;
+		g2d_bitblt(ctx, addr, ctx->blt_logicop);
 	default:
 		break; /* TODO: act like default op was set */
 	}
