@@ -788,10 +788,10 @@ void g2d_bld_out_setting(struct sunxi_g2d *g2d, struct g2d_frame *frm)
 	/*     p_image->clip_rect.h == 0 ? 0 : p_image->clip_rect.h - 1; */
 }
 
-void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logicop logicop)
+void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t src_addr[3], dma_addr_t dst_addr[3], enum g2d_blt_logicop logicop)
 {
 	struct sunxi_g2d *g2d = ctx->g2d;
-	G2D_DEBUG_MSG(g2d, "g2d_rectfill\n");
+	G2D_DEBUG_MSG(g2d, "g2d_bitblt\n");
 	uint32_t src_fmt_hw_id;
 	uint32_t dst_fmt_hw_id;
 	uint32_t midw;
@@ -806,10 +806,10 @@ void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logi
 	g2d_hw_reset(ctx->g2d);
 
 	if (logicop == G2D_BLT_NONE) {
-		g2d_vlayer_set(ctx->g2d, &ctx->src, addr, ctx->rectfill_color_alpha);
+		g2d_vlayer_set(ctx->g2d, &ctx->src, src_addr, ctx->rectfill_color_alpha);
 
 		if (ctx->src.alpha_bld_mode != G2D_PIXEL_ALPHA) {
-			g2d_uilayer_set(ctx->g2d, &ctx->dst, addr, 2, ctx->rectfill_color_alpha);
+			g2d_uilayer_set(ctx->g2d, &ctx->dst, dst_addr, 2, ctx->rectfill_color_alpha);
 		}
 
 		if (src_fmt_hw_id >= G2D_FORMAT_YUV422UVC_V1U1V0U0 || (ctx->src.sel.r.width != ctx->dst.sel.r.width) || (ctx->src.sel.r.height != ctx->dst.sel.r.height)) {
@@ -889,8 +889,7 @@ void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logi
     g2d_bld_out_setting(ctx->g2d, &ctx->dst);
 		/* bld_out_setting(p_frame->bld, dst); */
 
-		//TODO: Fix args
-		g2d_wb_set(ctx->g2d, &ctx->dst, addr);
+		g2d_wb_set(ctx->g2d, &ctx->dst, dst_addr);
 		/* g2d_wb_set(p_frame->wb, dst); */
 	} else {
 		if ((src_fmt_hw_id > G2D_FORMAT_BGRA1010102) |
@@ -898,10 +897,10 @@ void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logi
 			G2D_ERR_MSG(g2d, "Only support rgb format!\n");
 			return;
 		}
-		g2d_uilayer_set(ctx->g2d, &ctx->dst, addr, 0, ctx->rectfill_color_alpha);
+		g2d_uilayer_set(ctx->g2d, &ctx->dst, dst_addr, 0, ctx->rectfill_color_alpha);
 		/* g2d_uilayer_set(p_frame->ovl_u, 0, dst); */
 
-		g2d_vlayer_set(ctx->g2d, &ctx->src, addr, ctx->rectfill_color_alpha);
+		g2d_vlayer_set(ctx->g2d, &ctx->src, src_addr, ctx->rectfill_color_alpha);
 		/* g2d_vlayer_set(p_frame->ovl_v, 0, src); */
 
 		/* bpre = false; */
@@ -950,7 +949,7 @@ void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t addr[3], enum g2d_blt_logi
 		g2d_bld_out_setting(ctx->g2d, &ctx->dst);
 		/* bld_out_setting(p_frame->bld, dst); */
 
-		g2d_wb_set(ctx->g2d, &ctx->dst, addr);
+		g2d_wb_set(ctx->g2d, &ctx->dst, dst_addr);
 		/* g2d_wb_set(p_frame->wb, dst); */
 	}
 	G2D_INFO_MSG(g2d, "Starting bitblt");

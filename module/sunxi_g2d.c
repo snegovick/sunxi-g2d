@@ -317,7 +317,7 @@ static void g2d_device_run(void *priv)
 	struct sunxi_g2d_ctx *ctx = priv;
 	struct sunxi_g2d *g2d = ctx->g2d;
 	struct vb2_v4l2_buffer *src, *dst;
-	dma_addr_t src_addr, dst_addr, addr[3];
+	dma_addr_t src_addr, dst_addr, addr[3], addr2[3];
 	G2D_DEBUG_MSG(g2d, "g2d device run\n");
 
 	src = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
@@ -340,12 +340,15 @@ static void g2d_device_run(void *priv)
 		g2d_rectfill(ctx, addr);
 
 		break;
-  case G2D_BITBLT:
-    /* TODO: not sure how addr should be filled */
-		addr[0] = dst_addr;
+	case G2D_BITBLT:
+		/* TODO: not sure how addr should be filled */
+		addr[0] = src_addr;
 		addr[1] = 0;
 		addr[2] = 0;
-		g2d_bitblt(ctx, addr, ctx->blt_logicop);
+		addr2[0] = dst_addr;
+		addr2[1] = 0;
+		addr2[2] = 0;
+		g2d_bitblt(ctx, addr, addr2, ctx->blt_logicop);
 	default:
 		break; /* TODO: act like default op was set */
 	}
@@ -868,6 +871,7 @@ static int g2d_open(struct file *file)
 	ctx->src.alignment = 1;
 	ctx->src.sel.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
+  /* TODO: why ? */
 	/* default capture format */
 	ctx->dst = ctx->src;
 	ctx->src.sel.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
