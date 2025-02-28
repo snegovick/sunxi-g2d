@@ -1006,7 +1006,7 @@ static int g2d_probe(struct platform_device *pdev)
 	if (!g2d)
 		return -ENOMEM;
 
-	g2d->debug_level = gdl_disabled;
+	g2d->debug_level = gdl_debug;
 	g2d->vfd = g2d_videodev;
 	g2d->dev = &pdev->dev;
 
