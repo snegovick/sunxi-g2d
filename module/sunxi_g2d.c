@@ -569,18 +569,18 @@ static int g2d_try_selection(struct file *file, void *priv,
 		return -EINVAL;
 	}
 
-	if ((sel->r.left > frm->v4l2_pix_fmt.width - 1) ||
-			(sel->r.top > frm->v4l2_pix_fmt.height - 1)) {
-		v4l2_err(&g2d->v4l2_dev, "selection rect left or bottom boundary out of limits\n");
+	if ((sel->r.left >= frm->v4l2_pix_fmt.width) ||
+			(sel->r.top >= frm->v4l2_pix_fmt.height)) {
+		v4l2_err(&g2d->v4l2_dev, "selection rect left or top boundary out of limits\n");
 		return -EINVAL;
 	}
 
-	if ((sel->r.left + sel->r.width) > (frm->v4l2_pix_fmt.width - 1)) {
+	if ((sel->r.left + sel->r.width) > (frm->v4l2_pix_fmt.width)) {
 		v4l2_err(&g2d->v4l2_dev, "selection rect right boundary out of limits\n");
 		return -EINVAL;
 	}
 
-	if ((sel->r.top + sel->r.height) > (frm->v4l2_pix_fmt.height - 1)) {
+	if ((sel->r.top + sel->r.height) > (frm->v4l2_pix_fmt.height)) {
 		v4l2_err(&g2d->v4l2_dev, "selection rect bottom boundary out of limits\n");
 		return -EINVAL;
 	}
