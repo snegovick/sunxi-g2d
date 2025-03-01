@@ -536,7 +536,7 @@ int g2d_uilayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm, dma_addr_t add
 	case 0:
 		reg_attctl = UI0_ATTCTL;
 		reg_size = UI0_SIZE;
-		reg_size = UI0_MBSIZE;
+		reg_mbsize = UI0_MBSIZE;
 		reg_coor = UI0_COOR;
 		reg_pitch = UI0_PITCH;
 		reg_laddr0 = UI0_LADDR0;
@@ -545,7 +545,7 @@ int g2d_uilayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm, dma_addr_t add
 	case 1:
 		reg_attctl = UI1_ATTCTL;
 		reg_size = UI1_SIZE;
-		reg_size = UI1_MBSIZE;
+		reg_mbsize = UI1_MBSIZE;
 		reg_coor = UI1_COOR;
 		reg_pitch = UI1_PITCH;
 		reg_laddr0 = UI1_LADDR0;
@@ -554,7 +554,7 @@ int g2d_uilayer_set(struct sunxi_g2d *g2d, struct g2d_frame *frm, dma_addr_t add
 	case 2:
 		reg_attctl = UI2_ATTCTL;
 		reg_size = UI2_SIZE;
-		reg_size = UI2_MBSIZE;
+		reg_mbsize = UI2_MBSIZE;
 		reg_coor = UI2_COOR;
 		reg_pitch = UI2_PITCH;
 		reg_laddr0 = UI2_LADDR0;
