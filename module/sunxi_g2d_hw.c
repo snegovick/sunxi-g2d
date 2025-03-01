@@ -40,6 +40,7 @@ static const uint32_t porter_duff_to_bld[] = {
 	[G2D_PDM_CLEAR] = 0,
 	[G2D_PDM_COPY] = 0x00010001,
 	[G2D_PDM_DST] = 0x01000100,
+	[G2D_PDM_SRCOVER] = 0x03010301,
 	[G2D_PDM_DSTOVER] = 0x01030103,
 	[G2D_PDM_SRCIN] = 0x00020002,
 	[G2D_PDM_DSTIN] = 0x02000200,
@@ -48,7 +49,6 @@ static const uint32_t porter_duff_to_bld[] = {
 	[G2D_PDM_SRCATOP] = 0x03020302,
 	[G2D_PDM_DSTATOP] = 0x02030203,
 	[G2D_PDM_XOR] = 0x03030303,
-	[G2D_PDM_SRCOVER] = 0x03010301,
 };
 
 
@@ -266,14 +266,15 @@ void g2d_bldin_set(struct sunxi_g2d *g2d, struct g2d_frame *frm,
 	uint32_t reg;
 	uint32_t tmp;
 
-	if (!pipe_no) {
-		g2d_set_bits(g2d, BLD_EN_CTL, BLD_PIPE0_EN);
+	if (pipe_no == 0) {
+		tmp = FIELD_PREP(BLD_PIPE0_FENCE_EN, 1);
+		tmp |= FIELD_PREP(BLD_PIPE0_EN, 1);
+		g2d_set_bits(g2d, BLD_EN_CTL, tmp);
+		/* TODO: is FENCE_EN setting missing ? */
 		if (frm->premult_alpha)
 			g2d_set_bits(g2d, BLD_PREMUL_CTL,
 				BLD_PREMUL_CTL_PIPE0_ALPHA_MODE);
-	}
-
-	else {
+	} else {
 		g2d_set_bits(g2d, BLD_EN_CTL, BLD_PIPE1_EN);
 		if (frm->premult_alpha)
 			g2d_set_bits(g2d, BLD_PREMUL_CTL,
@@ -931,6 +932,8 @@ void g2d_bitblt(struct sunxi_g2d_ctx *ctx, dma_addr_t src_addr[3], dma_addr_t ds
 		/* bld_porter_duff(p_frame->bld, G2D_BLD_SRCOVER); */
 
 		g2d_write(ctx->g2d, ROP_CTL, 0);
+		tmp = logic_op_to_bld[G2D_BLT_MASKPEN];
+		g2d_write(ctx->g2d, ROP_INDEX0, tmp);
 		/* bld_set_rop_ctrl(p_frame->bld, 0x00); */
 
 		tmp = logic_op_to_bld[logicop];

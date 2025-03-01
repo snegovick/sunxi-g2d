@@ -208,6 +208,7 @@
 #define BLD_CTL_BLEND_PFD GENMASK(11, 8)
 #define BLD_CTL_BLEND_AFS GENMASK(19, 16)
 #define BLD_CTL_BLEND_AFD GENMASK(27, 24)
+
 #define BLD_KEY_CTL     (0x050 + G2D_BLD)
 #define BLD_KEY_CON     (0x054 + G2D_BLD)
 #define BLD_KEY_MAX     (0x058 + G2D_BLD)
