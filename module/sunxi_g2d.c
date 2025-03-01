@@ -293,7 +293,7 @@ static int g2d_job_ready(void *priv)
 
 	switch (ctx->chosen_g2d_op) {
 	case G2D_RECTFILL:
-  case G2D_BITBLT:
+	case G2D_BITBLT:
 		G2D_DEBUG_MSG(g2d, "g2d job ready\n");
 		/*
 		 * In reality Rectfill requires no source buffer and only a single
@@ -937,18 +937,18 @@ static int g2d_release(struct file *file)
 
 static ssize_t g2d_show_debug_level(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	struct sunxi_g2d *g2d = (struct sunxi_g2d *)dev->driver_data;
-	int count;
-	count = sprintf(buf, "%d\n", g2d->debug_level);
-	return count;
+	struct sunxi_g2d *g2d = dev_get_drvdata(dev);
+	return sprintf(buf, "%d\n", g2d->debug_level);
 }
 
 static ssize_t g2d_store_debug_level(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct sunxi_g2d *g2d = (struct sunxi_g2d *)dev->driver_data;
+	struct sunxi_g2d *g2d = dev_get_drvdata(dev);
 	/* Scan in our argument(s) */
-	uint32_t level;
-	sscanf(buf, "%d", &level);
+	unsigned long level;
+	if (kstrtoul(buf, 10, &level)) {
+		return -EINVAL;
+	}
 	switch (level) {
 	case gdl_disabled:
 	case gdl_info:
@@ -1006,7 +1006,7 @@ static int g2d_probe(struct platform_device *pdev)
 	if (!g2d)
 		return -ENOMEM;
 
-	g2d->debug_level = gdl_debug;
+	g2d->debug_level = gdl_disabled;
 	g2d->vfd = g2d_videodev;
 	g2d->dev = &pdev->dev;
 
@@ -1051,8 +1051,6 @@ static int g2d_probe(struct platform_device *pdev)
 
 	mutex_init(&g2d->dev_mutex);
 
-	g2d->dev->groups = g2d_groups;
-
 	ret = v4l2_device_register(g2d->dev, &g2d->v4l2_dev);
 	if (ret) {
 		dev_err(g2d->dev, "Failed to register V4L2 device\n");
@@ -1071,6 +1069,11 @@ static int g2d_probe(struct platform_device *pdev)
 	if (ret) {
 		v4l2_err(vfd->v4l2_dev, "Failed to register video device\n");
 		goto err_v4l2;
+	}
+
+  ret = device_add_groups(&vfd->dev, g2d_groups);
+	if (ret) {
+		dev_err(g2d->dev, "failed to create sysfs attributes\n");
 	}
 
 	v4l2_info(vfd->v4l2_dev, "Device registered as /dev/video%d\n", vfd->num);
@@ -1107,7 +1110,7 @@ static void g2d_remove(struct platform_device *pdev)
 	struct sunxi_g2d *g2d = platform_get_drvdata(pdev);
 	G2D_DEBUG_MSG(g2d, "g2d remove\n");
 
-	//sysfs_remove_group(&pdev->dev.kobj, &g2d_group);
+	device_remove_groups(&g2d->vfd.dev, g2d_groups);
 
 	v4l2_m2m_release(g2d->m2m_dev);
 	video_unregister_device(&g2d->vfd);

@@ -196,26 +196,23 @@ struct sunxi_g2d_ctx {
 
 struct g2d_fmt *find_fmt(struct v4l2_pix_format *);
 
-#define G2D_INFO_MSG(g2d, ...)                                  \
+#define G2D_INFO_MSG(g2d, fmt, ...)                              \
 	do {                                                          \
 		if (g2d->debug_level >= gdl_info) {                         \
-			printk("[G2D info] (%s) line:%d: ", __func__, __LINE__);  \
-			printk(__VA_ARGS__);                                      \
+			printk("[G2D info] (%s) line:%d: "#fmt, __func__, __LINE__, ##__VA_ARGS__);  \
 		}                                                           \
 	} while (0)
 
-#define G2D_DEBUG_MSG(g2d, ...)                                 \
+#define G2D_DEBUG_MSG(g2d, fmt, ...)                            \
 	do {                                                          \
 		if (g2d->debug_level >= gdl_debug) {                        \
-			printk("[G2D debug] (%s) line:%d: ", __func__, __LINE__); \
-			printk(__VA_ARGS__);                                      \
+			printk("[G2D debug] (%s) line:%d: "#fmt, __func__, __LINE__, ##__VA_ARGS__); \
 		}                                                           \
 	} while (0)
 
-#define G2D_ERR_MSG(g2d, ...)                                 \
+#define G2D_ERR_MSG(g2d, fmt, ...)                             \
 	do {                                                        \
-		printk("[G2D error] (%s) line:%d: ", __func__, __LINE__); \
-		printk(__VA_ARGS__);                                      \
+		printk("[G2D error] (%s) line:%d: "#fmt, __func__, __LINE__, ##__VA_ARGS__); \
 	} while (0)
 
 #endif
